@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status.connecting {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .message-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #9ca3af;
+            margin-right: 10px;
+        }
+
+        .log-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .log-type.sent {
+            background: #3b82f6;
+        }
+
+        .log-type.received {
+            background: #10b981;
+        }
+
+        .log-type.error {
+            background: #ef4444;
+        }
+
+        .messages-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .message-item pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 13px;
+            color: #374151;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 WebSocket Dashboard</h1>
+            <p>リアルタイム通信モニター</p>
+            <div style="margin-top: 15px;">
+                <span class="status" id="connectionStatus">接続中...</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="connectionCount">0</div>
+                <div class="stat-label">接続数</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="messageCount">0</div>
+                <div class="stat-label">総メッセージ数</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="sentCount">0</div>
+                <div class="stat-label">送信済み</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="receivedCount">0</div>
+                <div class="stat-label">受信済み</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📤 メッセージ送信</h2>
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="メッセージを入力してください..." disabled>
+                <button id="sendButton" disabled>送信</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 サーバーログ（最新10件）</h2>
+            <div class="messages-list" id="messagesList">
+                <p style="color: #6b7280; text-align: center; padding: 20px;">
+                    メッセージはまだありません
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 通信ログ</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span>WebSocket接続を初期化中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let sentCount = 0;
+        let receivedCount = 0;
+
+        const statusElement = document.getElementById('connectionStatus');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const logContainer = document.getElementById('logContainer');
+        const messagesList = document.getElementById('messagesList');
+        const connectionCountElement = document.getElementById('connectionCount');
+        const messageCountElement = document.getElementById('messageCount');
+        const sentCountElement = document.getElementById('sentCount');
+        const receivedCountElement = document.getElementById('receivedCount');
+
+        function updateStatus(status, text) {
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = text;
+        }
+
+        function addLog(type, message) {
+            const time = new Date().toLocaleTimeString('ja-JP');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-type ${type}">${type.toUpperCase()}</span>
+                <span>${message}</span>
+            `;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStats(data) {
+            console.log('updateStats called with:', data);
+
+            if (data.connections !== undefined) {
+                connectionCountElement.textContent = data.connections;
+                addLog('received', `接続数: ${data.connections}`);
+            }
+
+            if (data.messages) {
+                messageCountElement.textContent = data.messages.length;
+                addLog('received', `メッセージ数: ${data.messages.length}`);
+                updateMessagesList(data.messages);
+            }
+        }
+
+        function updateMessagesList(messages) {
+            console.log('updateMessagesList called with:', messages);
+
+            if (!messages || messages.length === 0) {
+                messagesList.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">メッセージはまだありません</p>';
+                return;
+            }
+
+            // 最新10件を取得して逆順に表示
+            const recentMessages = messages.slice(-10).reverse();
+
+            messagesList.innerHTML = recentMessages.map(msg => {
+                // msgが既にオブジェクトかどうか確認
+                let parsed;
+                if (typeof msg === 'string') {
+                    try {
+                        parsed = JSON.parse(msg);
+                    } catch (e) {
+                        console.warn('Failed to parse message:', msg, e);
+                        parsed = { type: 'text', content: msg };
+                    }
+                } else {
+                    parsed = msg;
+                }
+
+                return `
+                    <div class="message-item">
+                        <pre>${JSON.stringify(parsed, null, 2)}</pre>
+                    </div>
+                `;
+            }).join('');
+
+            console.log('Messages list updated with', recentMessages.length, 'items');
+        }
+
+        function connectWebSocket() {
+            updateStatus('connecting', '接続中...');
+            addLog('sent', 'WebSocketサーバーに接続中...');
+
+            ws = new WebSocket('ws://localhost:8000/ws');
+
+            ws.onopen = () => {
+                updateStatus('connected', '✅ 接続済み');
+                addLog('received', 'WebSocket接続が確立されました');
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+            };
+
+            ws.onmessage = async (event) => {
+                receivedCount++;
+                receivedCountElement.textContent = receivedCount;
+
+                console.log('WebSocket received message:', event);
+
+                // データが Blob の場合はテキストに変換
+                let messageText;
+                if (event.data instanceof Blob) {
+                    console.log('Data is Blob, converting to text...');
+                    messageText = await event.data.text();
+                    console.log('Converted Blob to text:', messageText);
+                } else {
+                    messageText = event.data;
+                }
+
+                try {
+                    const data = JSON.parse(messageText);
+                    console.log('Parsed data:', data);
+
+                    const messageType = data.type || 'unknown';
+                    addLog('received', `メッセージタイプ: ${messageType}`);
+
+                    // メッセージタイプごとに処理
+                    switch (messageType) {
+                        case 'log':
+                            console.log('Processing log data:', data.data);
+                            updateStats(data.data);
+                            break;
+
+                        case 'echo':
+                            console.log('Echo message received:', data.original);
+                            const echoContent = data.original.content || JSON.stringify(data.original);
+                            addLog('received', `🔄 エコー: ${echoContent}`);
+                            break;
+
+                        case 'chat':
+                            console.log('Chat message received:', data);
+                            addLog('received', `💬 チャット: ${data.content || data.text || JSON.stringify(data)}`);
+                            break;
+
+                        default:
+                            console.warn('Unknown message type:', messageType, data);
+                            addLog('received', `❓ 未知のタイプ: ${messageType}`);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e, 'Raw data:', messageText);
+                    addLog('error', `JSON解析エラー: ${e.message}`);
+                }
+            };
+
+            ws.onerror = (error) => {
+                addLog('error', `WebSocketエラーが発生しました`);
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                updateStatus('disconnected', '❌ 切断');
+                addLog('error', 'WebSocket接続が切断されました');
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+
+                // 5秒後に再接続を試みる
+                setTimeout(() => {
+                    addLog('sent', '再接続を試みています...');
+                    connectWebSocket();
+                }, 5000);
+            };
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            const payload = {
+                type: 'client_message',
+                content: message,
+                timestamp: Date.now() / 1000
+            };
+
+            const payloadStr = JSON.stringify(payload);
+            console.log('Sending message:', payloadStr);
+
+            ws.send(payloadStr);
+            sentCount++;
+            sentCountElement.textContent = sentCount;
+
+            addLog('sent', `メッセージ送信: "${message}"`);
+            messageInput.value = '';
+            messageInput.focus();
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 初期接続
+        connectWebSocket();
+    </script>
+</body>
+
+</html>
+```
+
+## 主な変更点
+
+1. **console.log追加** - デバッグ情報をブラウザコンソールに出力
+2. **updateMessagesList改善** - オブジェクトと文字列の両方に対応
+3. **エラーハンドリング強化** - パースエラーをキャッチ
+
+## テスト手順
+
+1. **ブラウザでダッシュボードを開く**
+```
+http://localhost:8000/

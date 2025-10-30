@@ -1,0 +1,31 @@
+{
+  "update_interval": 20.0,
+  "small_threshold": 7.0,
+  "medium_threshold": 16.0,
+  "large_threshold": 30.0,
+  "msg_small": "📊 すこしのうごきがありましたです",
+  "msg_medium": "⚠️ ちゅうくらいのうごきがありましたです",
+  "msg_large": "🚨 えええっ～びっくりです。大変です。",
+  "watch_symbols": {
+    "USDJPY": {
+      "digits": 3,
+      "jp_name": "どるえん"
+    },
+    "EURUSD": {
+      "digits": 5,
+      "jp_name": "ユーロドル"
+    },
+    "GBPUSD": {
+      "digits": 5,
+      "jp_name": "ポンドル"
+    },
+    "EURJPY": {
+      "digits": 3,
+      "jp_name": "ユーロえん"
+    },
+    "GBPJPY": {
+      "digits": 3,
+      "jp_name": "ポンドえん"
+    }
+  }
+}
