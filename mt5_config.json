@@ -1,6 +1,6 @@
 {
   "update_interval": 19.7,
-  "small_threshold": 7.0,
+  "small_threshold": 2.0,
   "medium_threshold": 16.0,
   "large_threshold": 30.0,
   "msg_small": "📊 すこしのうごきがありましたです",
