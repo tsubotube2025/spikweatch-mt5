@@ -189,7 +189,7 @@ class PriceMonitor:
                 emotion_tag = "[sad]"
             
             # メッセージを作成（感情タグ付き）
-            message_text = f"{emotion_tag} {jp_name} が {pips_change:.1f} pips {direction} したわ。{level_msg}"
+            message_text = f"{emotion_tag} {jp_name} が {pips_change:.1f} pips {direction} した。{level_msg}"
             
             logger.info(f"★ 通知: {symbol}({jp_name}) {pips_change:.1f} pips {direction}")
             

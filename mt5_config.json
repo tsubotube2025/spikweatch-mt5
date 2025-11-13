@@ -3,8 +3,8 @@
   "small_threshold": 8.0,
   "medium_threshold": 16.0,
   "large_threshold": 30.0,
-  "msg_small": "📊 すこしのうごきがあったわ",
-  "msg_medium": "⚠️ ちゅうくらいのうごきです",
+  "msg_small": "📊 すこしうごいたな",
+  "msg_medium": "⚠️ ニュースでも出たのか！",
   "msg_large": "🚨 おい！何か事件だろ！",
   "watch_symbols": {
     "USDJPY": {
